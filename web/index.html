@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Regex to Minimized DFA | Compiler Design Studio</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="header-brand">
+        <div class="logo-icon">⚙️</div>
+        <div>
+          <h1>Regex to Minimized DFA Studio</h1>
+          <p class="subtitle">Automated Lexical Analysis Pipeline: Thompson's NFA &rarr; Powerset DFA &rarr; Hopcroft's Minimization</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <span class="badge badge-accent">Compiler Design Project</span>
+        <button id="themeToggleBtn" class="btn btn-secondary btn-sm" title="Toggle Theme">🌓 Theme</button>
+      </div>
+    </header>
+
+    <!-- Top Input & Presets Section -->
+    <section class="control-panel card">
+      <div class="input-group-row">
+        <div class="input-wrapper">
+          <label for="regexInput" class="input-label">Regular Expression Pattern</label>
+          <div class="input-field-container">
+            <input type="text" id="regexInput" value="(a|b)*abb" placeholder="e.g. (a|b)*abb, a(b|c)*, (0|1)*00" spellcheck="false" autocomplete="off" />
+            <button id="convertBtn" class="btn btn-primary">
+              <span class="btn-icon">⚡</span> Transform Automata
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Benchmark Presets -->
+      <div class="presets-container">
+        <span class="preset-label">Presets:</span>
+        <div class="preset-chips" id="presetChips">
+          <button class="chip" data-regex="(a|b)*abb">(a|b)*abb</button>
+          <button class="chip" data-regex="(a|b)*a(a|b)">(a|b)*a(a|b)</button>
+          <button class="chip" data-regex="a(b|c)*">a(b|c)*</button>
+          <button class="chip" data-regex="(0|1)*00(0|1)*">(0|1)*00(0|1)*</button>
+          <button class="chip" data-regex="(a*b*)*">(a*b*)*</button>
+          <button class="chip" data-regex="(a|eps)b*">(a|eps)b*</button>
+          <button class="chip" data-regex="a+b?">a+b?</button>
+        </div>
+      </div>
+
+      <!-- Feedback / Error Banner -->
+      <div id="errorAlert" class="alert alert-error hidden"></div>
+    </section>
+
+    <!-- Pipeline Stages Tabs -->
+    <nav class="pipeline-nav">
+      <button class="tab-btn active" data-tab="tab-overview">
+        <span class="step-num">1</span> Parser & Postfix
+      </button>
+      <button class="tab-btn" data-tab="tab-nfa">
+        <span class="step-num">2</span> Thompson's NFA
+      </button>
+      <button class="tab-btn" data-tab="tab-dfa">
+        <span class="step-num">3</span> Powerset DFA
+      </button>
+      <button class="tab-btn" data-tab="tab-mindfa">
+        <span class="step-num">4</span> Hopcroft's Min DFA
+      </button>
+      <button class="tab-btn" data-tab="tab-metrics">
+        <span class="step-num">5</span> Reduction Metrics
+      </button>
+      <button class="tab-btn" data-tab="tab-simulator">
+        <span class="step-num">6</span> String Simulator
+      </button>
+    </nav>
+
+    <!-- Main Workspace Area -->
+    <main class="main-content">
+      <!-- TAB 1: PARSER & POSTFIX -->
+      <section id="tab-overview" class="tab-pane active">
+        <div class="pane-grid">
+          <div class="card info-card">
+            <h3>🔤 Lexical Regex Parser & Shunting-Yard</h3>
+            <p>Converts standard infix regular expression to Reverse Polish Notation (postfix) after inserting explicit concatenation operators (<code>.</code>).</p>
+            <div class="meta-list">
+              <div class="meta-item">
+                <span class="meta-label">Input Regular Expression</span>
+                <span id="overviewRegex" class="meta-val code-val">-</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-label">Explicit Infix Form</span>
+                <span id="overviewExplicit" class="meta-val code-val">-</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-label">Postfix (RPN) Notation</span>
+                <span id="overviewPostfix" class="meta-val code-val highlight-val">-</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-label">Recognized Alphabet Σ</span>
+                <span id="overviewAlphabet" class="meta-val code-val">-</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>📐 Transformation Pipeline Flow</h3>
+            <div class="pipeline-stepper">
+              <div class="step-card">
+                <div class="step-icon">1</div>
+                <h4>Regex Parser</h4>
+                <p>Validates syntax & inserts explicit concats</p>
+              </div>
+              <div class="step-arrow">&rarr;</div>
+              <div class="step-card">
+                <div class="step-icon">2</div>
+                <h4>Thompson NFA</h4>
+                <p>Builds stack-based NFA with &epsilon;-moves</p>
+              </div>
+              <div class="step-arrow">&rarr;</div>
+              <div class="step-card">
+                <div class="step-icon">3</div>
+                <h4>Powerset DFA</h4>
+                <p>Applies subset construction & &epsilon;-closures</p>
+              </div>
+              <div class="step-arrow">&rarr;</div>
+              <div class="step-card">
+                <div class="step-icon">4</div>
+                <h4>Hopcroft Min</h4>
+                <p>Refines partitions to reach minimal states</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: THOMPSON NFA -->
+      <section id="tab-nfa" class="tab-pane">
+        <div class="pane-header">
+          <div>
+            <h2>⚡ Thompson's Construction (NFA)</h2>
+            <p class="pane-sub">Non-deterministic finite automaton with &epsilon;-transitions generated via inductive stack rules.</p>
+          </div>
+          <div class="pane-stats">
+            <span class="stat-pill">States: <strong id="nfaStateCount">-</strong></span>
+            <span class="stat-pill">Transitions: <strong id="nfaTransCount">-</strong></span>
+            <span class="stat-pill">&epsilon;-Moves: <strong id="nfaEpsCount">-</strong></span>
+          </div>
+        </div>
+
+        <div class="graph-and-table-layout">
+          <div class="card graph-card">
+            <div class="card-toolbar">
+              <span class="toolbar-title">Interactive NFA Graph</span>
+              <div class="toolbar-actions">
+                <button class="btn btn-xs" onclick="resetGraphView('nfaSvg')">Center</button>
+                <button class="btn btn-xs" onclick="exportDotModal('nfa')">View DOT</button>
+              </div>
+            </div>
+            <div class="svg-container" id="nfaGraphContainer">
+              <svg id="nfaSvg"></svg>
+            </div>
+            <div class="graph-legend">
+              <span class="legend-item"><span class="legend-circle start-circle"></span> Start</span>
+              <span class="legend-item"><span class="legend-circle accept-circle"></span> Accept (Double)</span>
+              <span class="legend-item"><span class="legend-line eps-line"></span> &epsilon;-Transition</span>
+            </div>
+          </div>
+
+          <div class="card table-card">
+            <h3>NFA Transition Table &delta;</h3>
+            <div class="table-scroll" id="nfaTableContainer"></div>
+          </div>
+        </div>
+
+        <!-- Step-by-Step Construction History (Matching User Derivation Steps) -->
+        <div class="card mt-4 step-by-step-card">
+          <div class="card-toolbar">
+            <span class="toolbar-title">📖 Step-by-Step Thompson Construction (Matches Textbook & Hand-Drawn Steps)</span>
+            <span class="badge badge-accent">Interactive Visual Derivation</span>
+          </div>
+          <div class="step-gallery" id="nfaStepGallery">
+            <!-- Dynamically populated with Step 1, Step 2, Step 3 cards -->
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: SUBSET DFA -->
+      <section id="tab-dfa" class="tab-pane">
+        <div class="pane-header">
+          <div>
+            <h2>🔄 Subset Construction (DFA)</h2>
+            <p class="pane-sub">Powerset construction computing &epsilon;-closure and move operations across subsets of NFA states.</p>
+          </div>
+          <div class="pane-stats">
+            <span class="stat-pill">States: <strong id="dfaStateCount">-</strong></span>
+            <span class="stat-pill">Transitions: <strong id="dfaTransCount">-</strong></span>
+          </div>
+        </div>
+
+        <div class="graph-and-table-layout">
+          <div class="card graph-card">
+            <div class="card-toolbar">
+              <span class="toolbar-title">Interactive DFA Graph</span>
+              <div class="toolbar-actions">
+                <button class="btn btn-xs" onclick="resetGraphView('dfaSvg')">Center</button>
+                <button class="btn btn-xs" onclick="exportDotModal('dfa')">View DOT</button>
+              </div>
+            </div>
+            <div class="svg-container" id="dfaGraphContainer">
+              <svg id="dfaSvg"></svg>
+            </div>
+          </div>
+
+          <div class="card table-card">
+            <h3>DFA Transition Table & Subsets</h3>
+            <div class="table-scroll" id="dfaTableContainer"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 4: HOPCROFT MINIMIZED DFA -->
+      <section id="tab-mindfa" class="tab-pane">
+        <div class="pane-header">
+          <div>
+            <h2>🎯 Hopcroft's Minimized DFA</h2>
+            <p class="pane-sub">Optimal state machine derived by O(k &middot; n log n) partition refinement to merge equivalent states.</p>
+          </div>
+          <div class="pane-stats">
+            <span class="stat-pill">States: <strong id="minStateCount">-</strong></span>
+            <span class="stat-pill">Transitions: <strong id="minTransCount">-</strong></span>
+            <span class="stat-pill highlight-pill">Reduction: <strong id="minReductionPill">-</strong></span>
+          </div>
+        </div>
+
+        <div class="graph-and-table-layout">
+          <div class="card graph-card">
+            <div class="card-toolbar">
+              <span class="toolbar-title">Interactive Minimized DFA Graph</span>
+              <div class="toolbar-actions">
+                <button class="btn btn-xs" onclick="resetGraphView('minSvg')">Center</button>
+                <button class="btn btn-xs" onclick="exportDotModal('min_dfa')">View DOT</button>
+              </div>
+            </div>
+            <div class="svg-container" id="minGraphContainer">
+              <svg id="minSvg"></svg>
+            </div>
+          </div>
+
+          <div class="card table-card">
+            <h3>Minimized DFA Transition Table</h3>
+            <div class="table-scroll" id="minTableContainer"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 5: REDUCTION METRICS & REPORT -->
+      <section id="tab-metrics" class="tab-pane">
+        <div class="pane-header">
+          <div>
+            <h2>📊 State Reduction & Efficiency Report</h2>
+            <p class="pane-sub">Quantifies state machine optimization across each compilation phase.</p>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="copyReportMarkdown()">📋 Copy Report</button>
+        </div>
+
+        <!-- Metric KPI Cards -->
+        <div class="kpi-grid">
+          <div class="card kpi-card">
+            <div class="kpi-title">NFA States</div>
+            <div class="kpi-value" id="kpiNfaStates">-</div>
+            <div class="kpi-sub" id="kpiNfaTrans">- transitions</div>
+          </div>
+          <div class="card kpi-card">
+            <div class="kpi-title">Unminimized DFA States</div>
+            <div class="kpi-value" id="kpiDfaStates">-</div>
+            <div class="kpi-sub" id="kpiDfaTrans">- transitions</div>
+          </div>
+          <div class="card kpi-card highlight-card">
+            <div class="kpi-title">Hopcroft Minimal States</div>
+            <div class="kpi-value" id="kpiMinStates">-</div>
+            <div class="kpi-sub" id="kpiMinTrans">- transitions</div>
+          </div>
+          <div class="card kpi-card success-card">
+            <div class="kpi-title">NFA &rarr; Min DFA State Reduction</div>
+            <div class="kpi-value" id="kpiNfaToMinPct">0%</div>
+            <div class="kpi-sub">Total State Compression</div>
+          </div>
+        </div>
+
+        <!-- Charts and Breakdown -->
+        <div class="pane-grid mt-4">
+          <div class="card">
+            <h3>📉 Visual State Comparison</h3>
+            <div class="bar-chart-container">
+              <div class="bar-row">
+                <span class="bar-label">Thompson NFA</span>
+                <div class="bar-track">
+                  <div class="bar-fill bar-nfa" id="barNfa" style="width: 100%;"></div>
+                </div>
+                <span class="bar-value" id="barNfaVal">14</span>
+              </div>
+              <div class="bar-row">
+                <span class="bar-label">Subset DFA</span>
+                <div class="bar-track">
+                  <div class="bar-fill bar-dfa" id="barDfa" style="width: 35%;"></div>
+                </div>
+                <span class="bar-value" id="barDfaVal">5</span>
+              </div>
+              <div class="bar-row">
+                <span class="bar-label">Hopcroft Min DFA</span>
+                <div class="bar-track">
+                  <div class="bar-fill bar-min" id="barMin" style="width: 28%;"></div>
+                </div>
+                <span class="bar-value" id="barMinVal">4</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>⏱️ Transformation Latency</h3>
+            <div class="meta-list">
+              <div class="meta-item">
+                <span class="meta-label">Regex Parsing & Postfix</span>
+                <span class="meta-val" id="timeParse">-</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-label">Thompson NFA Construction</span>
+                <span class="meta-val" id="timeNfa">-</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-label">Powerset DFA Conversion</span>
+                <span class="meta-val" id="timeDfa">-</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-label">Hopcroft Minimization</span>
+                <span class="meta-val" id="timeMin">-</span>
+              </div>
+              <div class="meta-item border-top">
+                <span class="meta-label"><strong>Total Pipeline Runtime</strong></span>
+                <span class="meta-val" id="timeTotal"><strong>-</strong></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 6: STRING SIMULATOR -->
+      <section id="tab-simulator" class="tab-pane">
+        <div class="pane-header">
+          <div>
+            <h2>🧪 String Acceptance Simulator</h2>
+            <p class="pane-sub">Verify input string acceptance and compare step-by-step state traces across NFA, DFA, and Minimized DFA.</p>
+          </div>
+        </div>
+
+        <div class="card mb-4">
+          <div class="sim-input-row">
+            <input type="text" id="simStringInput" placeholder="Enter string to test (e.g. abb, ababb, a, bb)..." />
+            <button id="simBtn" class="btn btn-primary">Simulate String</button>
+            <button id="simStepBtn" class="btn btn-secondary">Step-by-Step</button>
+          </div>
+          <div class="quick-sim-strings">
+            <span>Quick tests:</span>
+            <button class="chip chip-sm" data-sim="abb">abb</button>
+            <button class="chip chip-sm" data-sim="ababb">ababb</button>
+            <button class="chip chip-sm" data-sim="ba">ba</button>
+            <button class="chip chip-sm" data-sim="a">a</button>
+            <button class="chip chip-sm" data-sim="">"" (empty)</button>
+          </div>
+        </div>
+
+        <div id="simResultsSection" class="hidden">
+          <div class="sim-verdict-banner" id="simVerdictBanner">
+            <div class="verdict-icon" id="simVerdictIcon">✅</div>
+            <div>
+              <h3 id="simVerdictTitle">String Accepted</h3>
+              <p id="simVerdictSubtitle">NFA, DFA, and Minimized DFA all produced matching verdicts.</p>
+            </div>
+          </div>
+
+          <div class="pane-grid mt-4">
+            <div class="card">
+              <h4>🎯 Minimized DFA Execution Path</h4>
+              <div class="trace-container" id="minTraceList"></div>
+            </div>
+            <div class="card">
+              <h4>⚡ NFA Active States Trace</h4>
+              <div class="trace-container" id="nfaTraceList"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Modal for Graphviz DOT Export -->
+    <div id="dotModal" class="modal hidden">
+      <div class="modal-content card">
+        <div class="modal-header">
+          <h3 id="dotModalTitle">Graphviz DOT Code</h3>
+          <button class="modal-close" onclick="closeDotModal()">&times;</button>
+        </div>
+        <textarea id="dotTextarea" readonly spellcheck="false"></textarea>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" onclick="copyDotCode()">Copy Code</button>
+          <button class="btn btn-primary" onclick="closeDotModal()">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <p>Compiler Design Project &bull; Module 1: Parser &bull; Module 2: Thompson NFA &bull; Module 3: Powerset DFA &bull; Module 4: Hopcroft Minimization &bull; Module 5: Metrics</p>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

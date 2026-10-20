@@ -1,0 +1,3 @@
+# Regex to Minimized DFA Automaton Studio
+# Core project relies 100% on Python 3.8+ Standard Library.
+# No external pip packages required for CLI, algorithms, API, or Web UI.
